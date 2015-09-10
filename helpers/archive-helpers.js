@@ -50,7 +50,7 @@ exports.isUrlInList = function(wantedURL, cb) {
 };
 
 exports.addUrlToList = function(url, cb) {
-  fs.appendFile(exports.paths.list, url + "\n", function (err) {
+  fs.appendFile(exports.paths.list, url + "\n", 'utf-8', function (err) {
     if (err) throw err;
     cb();
   });
@@ -65,18 +65,29 @@ exports.isUrlArchived = function(url, cb) {
   });
 };
 
-exports.downloadUrls = function(urls) {
+exports.downloadUrls = function(urls, cb) {
+  var i = 0;
+  var total = urls.length;
   _.each(urls, function(url) {
     exports.isUrlInList(url, function(is){
       if (!is){
         exports.addUrlToList(url, function() {
+          exports.isUrlInList(url, function (is) {
+            console.log(is);
+          });
           download(url);
+          if (++i === total) {
+            typeof cb === "function" && cb();
+          }
         });
       }
       else {
         exports.isUrlArchived(url, function(is){
           if (!is) {
             download(url);
+            if (++i === total) {
+              typeof cb === "function" && cb();
+            }
           }
         });
       }
