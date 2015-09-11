@@ -1,7 +1,8 @@
 var fs = require('fs');
 var path = require('path');
+var http = require("http");
+var http = require('follow-redirects').http;
 var _ = require('underscore');
-var download = require('../workers/htmlfetcher').download;
 
 /*
  * You will need to reuse the same paths many times over in the course of this sprint.
@@ -45,7 +46,7 @@ exports.readListOfUrls = function(cb) {
 
 exports.isUrlInList = function(wantedURL, cb) {
   exports.readListOfUrls(function(data){
-      cb(data.indexOf(wantedURL)===-1 ? false : true);
+    cb(data.indexOf(wantedURL)===-1 ? false : true);
   });
 };
 
@@ -72,12 +73,9 @@ exports.downloadUrls = function(urls, cb) {
     exports.isUrlInList(url, function(is){
       if (!is){
         exports.addUrlToList(url, function() {
-          exports.isUrlInList(url, function (is) {
-            console.log(is);
-          });
           download(url);
           if (++i === total) {
-            typeof cb === "function" && cb();
+            typeof cb === 'function' && cb();
           }
         });
       }
@@ -86,11 +84,34 @@ exports.downloadUrls = function(urls, cb) {
           if (!is) {
             download(url);
             if (++i === total) {
-              typeof cb === "function" && cb();
+              typeof cb === 'function' && cb();
+            }
+          } else {
+            if (++i === total) {
+              typeof cb === 'function' && cb();
             }
           }
         });
       }
     });
   });
+  var download = function(url){
+    var request = http.request({host: url, port: 80}, function (res) {
+      var data = '';
+      res.on('data', function (chunk) {
+          data += chunk;
+      });
+      res.on('end', function () {
+        console.log(exports.paths.archivedSites + '/' + url);
+        fs.writeFile(exports.paths.archivedSites + '/' + url, data, function (err) {
+          if (err) throw err;
+          console.log('It\'s saved!');
+        });
+      });
+    });
+    request.on('error', function (e) {
+        console.log(e.message);
+    });
+    request.end();
+  };
 };
