@@ -7,7 +7,7 @@ var qs = require('querystring');
 exports.handleRequest = function (req, res) {
 
 //'floodgates.com:8080/www.google.com'
-  if (req.url === '/'){
+  if (req.url === '/' || (req.url === '/loading.html' && req.method === 'POST')){
     if (req.method === 'POST'){
       var rawData = "";
       var post;
@@ -16,17 +16,18 @@ exports.handleRequest = function (req, res) {
       });
       req.on('end', function () {
         post = qs.parse(rawData);
-        archive.downloadUrls([post.url], function() {
-          res.writeHeader(302);
-          res.end();
+        archive.isUrlArchived(post.url, function(is) {
+          if (!is){
+            archive.downloadUrls([post.url], function() {
+              res.writeHeader(302, {Location: 'http://127.0.0.1:8080/loading.html'});
+              res.end("true");
+            }); 
+          } else {
+            res.writeHeader(302);
+            res.writeHeader(302, {Location: 'http://127.0.0.1:8080/'+post.url});
+            res.end("false");
+          }
         });
-        
-        /*
-        setTimeout(function() {
-          res.writeHeader(302);
-          res.end();
-        }, 1500 );
-        */
       });
     }
     else {
@@ -41,6 +42,24 @@ exports.handleRequest = function (req, res) {
   }
   else if (req.url === '/favicon.ico'){
     fs.readFile(archive.paths.favicon, function (err, data) {
+      if (err) {
+        throw err;
+      }
+      res.writeHeader(200);
+      res.end(data);
+    });
+  }
+  else if (req.url === '/loading.html'){
+    fs.readFile(archive.paths.siteAssets + "/loading.html", function (err, data) {
+      if (err) {
+        throw err;
+      }
+      res.writeHeader(200);
+      res.end(data);
+    });
+  }
+  else if (req.url === '/styles.css'){
+    fs.readFile(archive.paths.siteAssets + "/styles.css", function (err, data) {
       if (err) {
         throw err;
       }
