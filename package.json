@@ -3,7 +3,9 @@
   "version": "1.0.1",
   "main": "web/basic-server.js",
   "license": "Copyright 2014, Hack Reactor. All rights reserved.",
-  "dependencies": {},
+  "dependencies": {
+    "follow-redirects": "0.0.7"
+  },
   "devDependencies": {
     "chai": "^1.9.0",
     "cron": "^1.0.3",
@@ -15,6 +17,6 @@
   },
   "scripts": {
     "test": "mocha test",
-    "start": "node ./web/basic-server.js"
+    "start": "nodemon ./web/basic-server.js"
   }
 }
